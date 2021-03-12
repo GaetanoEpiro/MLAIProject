@@ -64,7 +64,7 @@ def alexnet(classes):
             nn.init.xavier_uniform_(m.weight, .1)
             nn.init.constant_(m.bias, 0.)
 
-    state_dict = torch.load("./models/pretrained/alexnet_caffe.pth.tar")
+    state_dict = torch.load("/content/drive/MyDrive/alexnet_caffe.pth.tar")
 
     del state_dict["classifier.fc8.weight"]
     del state_dict["classifier.fc8.bias"]
