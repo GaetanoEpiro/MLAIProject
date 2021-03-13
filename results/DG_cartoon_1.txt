@@ -1,0 +1,156 @@
+Using  AlexNet
+Dataset size: train 6884, val 763, test 2344
+Step size: 24
+Saving to /content/MLAIProject/utils/../logs/art_painting-photo-sketch_to_cartoon/eps30_bs128_lr0.001_class7_TAll_418
+New epoch - lr: 0.001
+0/53 of epoch 1/30 Class Loss  : 1.955 - Class Accuracy  : 11.72 [bs:128]
+30/53 of epoch 1/30 Class Loss  : 0.630 - Class Accuracy  : 77.34 [bs:128]
+Accuracies on val: Classification Accuracy : 83.75
+Accuracies on test: Classification Accuracy : 65.87
+New epoch - lr: 0.001
+0/53 of epoch 2/30 Class Loss  : 0.393 - Class Accuracy  : 89.06 [bs:128]
+30/53 of epoch 2/30 Class Loss  : 0.307 - Class Accuracy  : 89.06 [bs:128]
+Accuracies on val: Classification Accuracy : 87.81
+Accuracies on test: Classification Accuracy : 69.41
+New epoch - lr: 0.001
+0/53 of epoch 3/30 Class Loss  : 0.219 - Class Accuracy  : 92.97 [bs:128]
+30/53 of epoch 3/30 Class Loss  : 0.299 - Class Accuracy  : 87.50 [bs:128]
+Accuracies on val: Classification Accuracy : 88.47
+Accuracies on test: Classification Accuracy : 65.23
+New epoch - lr: 0.001
+0/53 of epoch 4/30 Class Loss  : 0.264 - Class Accuracy  : 89.06 [bs:128]
+30/53 of epoch 4/30 Class Loss  : 0.365 - Class Accuracy  : 87.50 [bs:128]
+Accuracies on val: Classification Accuracy : 88.34
+Accuracies on test: Classification Accuracy : 67.70
+New epoch - lr: 0.001
+0/53 of epoch 5/30 Class Loss  : 0.210 - Class Accuracy  : 92.97 [bs:128]
+30/53 of epoch 5/30 Class Loss  : 0.238 - Class Accuracy  : 91.41 [bs:128]
+Accuracies on val: Classification Accuracy : 89.25
+Accuracies on test: Classification Accuracy : 69.62
+New epoch - lr: 0.001
+0/53 of epoch 6/30 Class Loss  : 0.224 - Class Accuracy  : 89.84 [bs:128]
+30/53 of epoch 6/30 Class Loss  : 0.100 - Class Accuracy  : 98.44 [bs:128]
+Accuracies on val: Classification Accuracy : 89.52
+Accuracies on test: Classification Accuracy : 70.65
+New epoch - lr: 0.001
+0/53 of epoch 7/30 Class Loss  : 0.153 - Class Accuracy  : 93.75 [bs:128]
+30/53 of epoch 7/30 Class Loss  : 0.130 - Class Accuracy  : 95.31 [bs:128]
+Accuracies on val: Classification Accuracy : 90.43
+Accuracies on test: Classification Accuracy : 65.32
+New epoch - lr: 0.001
+0/53 of epoch 8/30 Class Loss  : 0.181 - Class Accuracy  : 93.75 [bs:128]
+30/53 of epoch 8/30 Class Loss  : 0.111 - Class Accuracy  : 98.44 [bs:128]
+Accuracies on val: Classification Accuracy : 90.56
+Accuracies on test: Classification Accuracy : 68.52
+New epoch - lr: 0.001
+0/53 of epoch 9/30 Class Loss  : 0.099 - Class Accuracy  : 96.88 [bs:128]
+30/53 of epoch 9/30 Class Loss  : 0.161 - Class Accuracy  : 94.53 [bs:128]
+Accuracies on val: Classification Accuracy : 90.43
+Accuracies on test: Classification Accuracy : 68.13
+New epoch - lr: 0.001
+0/53 of epoch 10/30 Class Loss  : 0.143 - Class Accuracy  : 95.31 [bs:128]
+30/53 of epoch 10/30 Class Loss  : 0.075 - Class Accuracy  : 96.88 [bs:128]
+Accuracies on val: Classification Accuracy : 90.56
+Accuracies on test: Classification Accuracy : 69.24
+New epoch - lr: 0.001
+0/53 of epoch 11/30 Class Loss  : 0.035 - Class Accuracy  : 100.00 [bs:128]
+30/53 of epoch 11/30 Class Loss  : 0.104 - Class Accuracy  : 95.31 [bs:128]
+Accuracies on val: Classification Accuracy : 89.91
+Accuracies on test: Classification Accuracy : 70.44
+New epoch - lr: 0.001
+0/53 of epoch 12/30 Class Loss  : 0.045 - Class Accuracy  : 98.44 [bs:128]
+30/53 of epoch 12/30 Class Loss  : 0.093 - Class Accuracy  : 96.09 [bs:128]
+Accuracies on val: Classification Accuracy : 90.30
+Accuracies on test: Classification Accuracy : 71.46
+New epoch - lr: 0.001
+0/53 of epoch 13/30 Class Loss  : 0.066 - Class Accuracy  : 96.88 [bs:128]
+30/53 of epoch 13/30 Class Loss  : 0.079 - Class Accuracy  : 98.44 [bs:128]
+Accuracies on val: Classification Accuracy : 91.61
+Accuracies on test: Classification Accuracy : 72.53
+New epoch - lr: 0.001
+0/53 of epoch 14/30 Class Loss  : 0.022 - Class Accuracy  : 99.22 [bs:128]
+30/53 of epoch 14/30 Class Loss  : 0.073 - Class Accuracy  : 96.09 [bs:128]
+Accuracies on val: Classification Accuracy : 90.30
+Accuracies on test: Classification Accuracy : 70.52
+New epoch - lr: 0.001
+0/53 of epoch 15/30 Class Loss  : 0.044 - Class Accuracy  : 98.44 [bs:128]
+30/53 of epoch 15/30 Class Loss  : 0.047 - Class Accuracy  : 99.22 [bs:128]
+Accuracies on val: Classification Accuracy : 90.69
+Accuracies on test: Classification Accuracy : 68.43
+New epoch - lr: 0.001
+0/53 of epoch 16/30 Class Loss  : 0.048 - Class Accuracy  : 99.22 [bs:128]
+30/53 of epoch 16/30 Class Loss  : 0.040 - Class Accuracy  : 99.22 [bs:128]
+Accuracies on val: Classification Accuracy : 91.48
+Accuracies on test: Classification Accuracy : 69.62
+New epoch - lr: 0.001
+0/53 of epoch 17/30 Class Loss  : 0.024 - Class Accuracy  : 99.22 [bs:128]
+30/53 of epoch 17/30 Class Loss  : 0.043 - Class Accuracy  : 99.22 [bs:128]
+Accuracies on val: Classification Accuracy : 90.83
+Accuracies on test: Classification Accuracy : 69.37
+New epoch - lr: 0.001
+0/53 of epoch 18/30 Class Loss  : 0.027 - Class Accuracy  : 100.00 [bs:128]
+30/53 of epoch 18/30 Class Loss  : 0.049 - Class Accuracy  : 98.44 [bs:128]
+Accuracies on val: Classification Accuracy : 91.22
+Accuracies on test: Classification Accuracy : 70.01
+New epoch - lr: 0.001
+0/53 of epoch 19/30 Class Loss  : 0.015 - Class Accuracy  : 100.00 [bs:128]
+30/53 of epoch 19/30 Class Loss  : 0.092 - Class Accuracy  : 96.88 [bs:128]
+Accuracies on val: Classification Accuracy : 92.01
+Accuracies on test: Classification Accuracy : 71.20
+New epoch - lr: 0.001
+0/53 of epoch 20/30 Class Loss  : 0.011 - Class Accuracy  : 100.00 [bs:128]
+30/53 of epoch 20/30 Class Loss  : 0.008 - Class Accuracy  : 100.00 [bs:128]
+Accuracies on val: Classification Accuracy : 90.96
+Accuracies on test: Classification Accuracy : 66.21
+New epoch - lr: 0.001
+0/53 of epoch 21/30 Class Loss  : 0.017 - Class Accuracy  : 100.00 [bs:128]
+30/53 of epoch 21/30 Class Loss  : 0.061 - Class Accuracy  : 98.44 [bs:128]
+Accuracies on val: Classification Accuracy : 91.74
+Accuracies on test: Classification Accuracy : 69.58
+New epoch - lr: 0.001
+0/53 of epoch 22/30 Class Loss  : 0.058 - Class Accuracy  : 97.66 [bs:128]
+30/53 of epoch 22/30 Class Loss  : 0.072 - Class Accuracy  : 97.66 [bs:128]
+Accuracies on val: Classification Accuracy : 91.61
+Accuracies on test: Classification Accuracy : 71.42
+New epoch - lr: 0.001
+0/53 of epoch 23/30 Class Loss  : 0.056 - Class Accuracy  : 98.44 [bs:128]
+30/53 of epoch 23/30 Class Loss  : 0.030 - Class Accuracy  : 98.44 [bs:128]
+Accuracies on val: Classification Accuracy : 90.83
+Accuracies on test: Classification Accuracy : 69.20
+New epoch - lr: 0.001
+0/53 of epoch 24/30 Class Loss  : 0.043 - Class Accuracy  : 97.66 [bs:128]
+30/53 of epoch 24/30 Class Loss  : 0.025 - Class Accuracy  : 99.22 [bs:128]
+Accuracies on val: Classification Accuracy : 91.35
+Accuracies on test: Classification Accuracy : 70.44
+New epoch - lr: 1e-05
+0/53 of epoch 25/30 Class Loss  : 0.032 - Class Accuracy  : 98.44 [bs:128]
+30/53 of epoch 25/30 Class Loss  : 0.042 - Class Accuracy  : 98.44 [bs:128]
+Accuracies on val: Classification Accuracy : 92.01
+Accuracies on test: Classification Accuracy : 70.14
+New epoch - lr: 0.0001
+0/53 of epoch 26/30 Class Loss  : 0.017 - Class Accuracy  : 100.00 [bs:128]
+30/53 of epoch 26/30 Class Loss  : 0.054 - Class Accuracy  : 98.44 [bs:128]
+Accuracies on val: Classification Accuracy : 92.66
+Accuracies on test: Classification Accuracy : 69.88
+New epoch - lr: 0.0001
+0/53 of epoch 27/30 Class Loss  : 0.037 - Class Accuracy  : 98.44 [bs:128]
+30/53 of epoch 27/30 Class Loss  : 0.006 - Class Accuracy  : 100.00 [bs:128]
+Accuracies on val: Classification Accuracy : 92.14
+Accuracies on test: Classification Accuracy : 70.18
+New epoch - lr: 0.0001
+0/53 of epoch 28/30 Class Loss  : 0.016 - Class Accuracy  : 99.22 [bs:128]
+30/53 of epoch 28/30 Class Loss  : 0.047 - Class Accuracy  : 98.44 [bs:128]
+Accuracies on val: Classification Accuracy : 92.01
+Accuracies on test: Classification Accuracy : 70.22
+New epoch - lr: 0.0001
+0/53 of epoch 29/30 Class Loss  : 0.009 - Class Accuracy  : 100.00 [bs:128]
+30/53 of epoch 29/30 Class Loss  : 0.008 - Class Accuracy  : 100.00 [bs:128]
+Accuracies on val: Classification Accuracy : 92.14
+Accuracies on test: Classification Accuracy : 69.97
+New epoch - lr: 0.0001
+0/53 of epoch 30/30 Class Loss  : 0.025 - Class Accuracy  : 98.44 [bs:128]
+30/53 of epoch 30/30 Class Loss  : 0.009 - Class Accuracy  : 100.00 [bs:128]
+Accuracies on val: Classification Accuracy : 92.79
+Accuracies on test: Classification Accuracy : 70.31
+Best val 0.927916, corresponding test 0.703072 - best test: 0.725256
+It took 21517.2
