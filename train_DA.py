@@ -17,7 +17,7 @@ def get_args():
 
     parser.add_argument("--source", choices=available_datasets, help="Source", nargs='+')
     parser.add_argument("--target", choices=available_datasets, help="Target")
-    parser.add_argument("--path_dataset", default="/home/silvia/Jigen_AIMLProject/", help="Path where the dataset is located")
+    parser.add_argument("--path_dataset", default="/content/MLAIProject/", help="Path where the dataset is located")
 
     # data augmentation
     parser.add_argument("--min_scale", default=0.8, type=float, help="Minimum scale percent")
