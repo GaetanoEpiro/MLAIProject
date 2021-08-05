@@ -46,6 +46,11 @@ def generate_jigsaw_puzzle(names, beta, data_path):
   num_names = len(names)
   subset_indexes = sample(range(num_names), int(num_names*beta))
 
+  jigsaw_images = []
+  jigsaw_labels = []
+  jigsaw_permutations = []
+  permutations = []
+
   for index in subset_indexes:
     fullpath = data_path + '/' + names[index]
 
@@ -74,7 +79,6 @@ def generate_jigsaw_puzzle(names, beta, data_path):
 
     #Read permutations from file
     num_perm = 30
-    permutations = []
 
     with open('permutations_hamming_%d.txt' %(num_perm)) as f:
       lines = f.read().splitlines()
@@ -83,7 +87,7 @@ def generate_jigsaw_puzzle(names, beta, data_path):
       permutations.append([int(i) for i in l.split()])
 
     #Select a permutation and reorder crops
-    for permutation in permutations:
+    for index, permutation in enumerate(permutations):
       permutate_img = [crops[i] for i in permutation]
 
       #Create the background for the new image
@@ -95,6 +99,12 @@ def generate_jigsaw_puzzle(names, beta, data_path):
         for i in range(0, 3):
           new_image.paste(permutate_img[k], (i*int(x), j*int(y)))
           k += 1
+      
+      jigsaw_images.append(new_image)
+      jigsaw_permutations.append(permutation)
+      jigsaw_labels.append(index)
+
+  return jigsaw_images, jigsaw_labels, jigsaw_permutations
 
 class Dataset(data.Dataset):
     def __init__(self, names, labels, path_dataset,img_transformer=None, beta=0.2):
@@ -104,7 +114,7 @@ class Dataset(data.Dataset):
         self._image_transformer = img_transformer
         self.beta = beta
 
-        generate_jigsaw_puzzle(names, beta, self.data_path)
+        jigsaw_images, jigsaw_labels, jigsaw_permutations = generate_jigsaw_puzzle(names, beta, self.data_path)
 
     def __getitem__(self, index):
 
