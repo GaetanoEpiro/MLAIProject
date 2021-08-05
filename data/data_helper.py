@@ -24,10 +24,10 @@ def get_train_dataloader(args):
     for dname in dataset_list:
         name_train, name_val, labels_train, labels_val = get_split_dataset_info(join(dirname(__file__), 'txt_lists', dname+'.txt'), args.val_size)
 
-        train_dataset = Dataset(name_train, labels_train, args.path_dataset, img_transformer=img_transformer)
+        train_dataset = Dataset(name_train, labels_train, args.path_dataset, img_transformer=img_transformer, beta=args.beta)
         datasets.append(train_dataset)
 
-        val_dataset = TestDataset(name_val, labels_val, args.path_dataset, img_transformer=val_trasformer)
+        val_dataset = TestDataset(name_val, labels_val, args.path_dataset, img_transformer=val_trasformer, beta=args.beta)
         val_datasets.append(val_dataset)
 
     dataset = ConcatDataset(datasets)
@@ -44,7 +44,7 @@ def get_val_dataloader(args):
     names, labels = _dataset_info(join(dirname(__file__), 'txt_lists', args.target+'.txt'))
     img_tr = get_val_transformer(args)
 
-    val_dataset = TestDataset(names, labels,args.path_dataset, img_transformer=img_tr)
+    val_dataset = TestDataset(names, labels,args.path_dataset, img_transformer=img_tr, beta=args.beta)
     dataset = ConcatDataset([val_dataset])
     loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True, drop_last=False)
 
