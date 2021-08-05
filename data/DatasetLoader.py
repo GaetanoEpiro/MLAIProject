@@ -38,18 +38,73 @@ def _dataset_info(txt_labels):
 
     return file_names, labels
 
-
 def get_split_dataset_info(txt_list, val_percentage):
     names, labels = _dataset_info(txt_list)
     return get_random_subset(names, labels, val_percentage)
 
+def generate_jigsaw_puzzle(names, beta, data_path):
+  num_names = len(names)
+  subset_indexes = sample(range(num_names), int(num_names*beta))
+
+  for index in subset_indexes:
+    fullpath = data_path + '/' + names[index]
+
+    image = Image.open(fullpath)
+    image.show()
+    
+    imgwidth, imgheight = image.size
+
+    new_width = imgwidth + 1
+    new_height = imgheight + 1 
+
+    result = Image.new(image.mode, (new_width, new_height), (0, 0, 255))
+    result.paste(image, (0, 0))
+
+    imgwidth, imgheight = result.size
+    
+    x = imgwidth / 3
+    y = imgheight / 3
+
+    crops = []
+  
+    for i in range(0, imgwidth, int(x)):
+      for j in range(0, imgwidth, int(y)):
+        img = result.crop((j, i, int(j+x), int(i+y)))
+        crops.append(img)
+
+    #Read permutations from file
+    num_perm = 30
+    permutations = []
+
+    with open('permutations_hamming_%d.txt' %(num_perm)) as f:
+      lines = f.read().splitlines()
+
+    for l in lines:
+      permutations.append([int(i) for i in l.split()])
+
+    #Select a permutation and reorder crops
+    for permutation in permutations:
+      permutate_img = [crops[i] for i in permutation]
+
+      #Create the background for the new image
+      new_image = Image.new('RGB', (imgwidth, imgheight))
+
+      #Join crops
+      k = 0
+      for j in range(0, 3):
+        for i in range(0, 3):
+          new_image.paste(permutate_img[k], (i*int(x), j*int(y)))
+          k += 1
 
 class Dataset(data.Dataset):
-    def __init__(self, names, labels, path_dataset,img_transformer=None):
+    def __init__(self, names, labels, path_dataset,img_transformer=None, beta=0.2):
         self.data_path = path_dataset
         self.names = names
         self.labels = labels
         self._image_transformer = img_transformer
+        self.beta = beta
+
+        generate_jigsaw_puzzle(names, beta, self.data_path)
 
     def __getitem__(self, index):
 
