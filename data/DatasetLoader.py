@@ -43,7 +43,7 @@ def get_split_dataset_info(txt_list, val_percentage):
     return get_random_subset(names, labels, val_percentage)
 
 def generate_jigsaw_puzzle(permutations, image):
-
+  
   imgwidth, imgheight = image.size
 
   new_width = imgwidth + 1
@@ -94,25 +94,28 @@ class Dataset(data.Dataset):
         self.n_scrambled = 0
 
     def __getitem__(self, index):
-
+        
         framename = self.data_path + '/' + self.names[index]
-      
         img = Image.open(framename).convert('RGB')
-        img = self._image_transformer(img)
 
         if self.n_scrambled < self.amount:
           img, label = generate_jigsaw_puzzle(self.permutations, img)
+          
           self.n_scrambled += 1
-          print("Num mescolate: " + str(self.n_scrambled))
+          
+          img = self._image_transformer(img)
+
           return img, int(self.labels[index]), label
-        print("Num dritte: " + str(len(self.names) - self.n_scrambled))
+
+        img = self._image_transformer(img)
+
         return img, int(self.labels[index]), int(0)
 
 
     def __len__(self):
         return len(self.names)
 
-    def get_permutations():
+    def get_permutations(self):
       permutations = []
 
       with open('permutations_hamming_30.txt') as f:
