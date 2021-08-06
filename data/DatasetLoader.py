@@ -42,80 +42,86 @@ def get_split_dataset_info(txt_list, val_percentage):
     names, labels = _dataset_info(txt_list)
     return get_random_subset(names, labels, val_percentage)
 
-def generate_jigsaw_puzzle(names, beta, data_path):
-  num_names = len(names)
-  subset_indexes = sample(range(num_names), int(num_names*beta))
+def generate_jigsaw_puzzle(permutations, image):
 
-  for index in subset_indexes:
-    fullpath = data_path + '/' + names[index]
+  imgwidth, imgheight = image.size
 
-    image = Image.open(fullpath)
-    image.show()
+  new_width = imgwidth + 1
+  new_height = imgheight + 1 
+
+  result = Image.new(image.mode, (new_width, new_height), (0, 0, 255))
+  result.paste(image, (0, 0))
+
+  imgwidth, imgheight = result.size
     
-    imgwidth, imgheight = image.size
+  x = imgwidth / 3
+  y = imgheight / 3
 
-    new_width = imgwidth + 1
-    new_height = imgheight + 1 
-
-    result = Image.new(image.mode, (new_width, new_height), (0, 0, 255))
-    result.paste(image, (0, 0))
-
-    imgwidth, imgheight = result.size
-    
-    x = imgwidth / 3
-    y = imgheight / 3
-
-    crops = []
+  crops = []
   
-    for i in range(0, imgwidth, int(x)):
-      for j in range(0, imgwidth, int(y)):
-        img = result.crop((j, i, int(j+x), int(i+y)))
-        crops.append(img)
+  for i in range(0, imgwidth, int(x)):
+    for j in range(0, imgwidth, int(y)):
+      img = result.crop((j, i, int(j+x), int(i+y)))
+      crops.append(img)
 
-    #Read permutations from file
-    num_perm = 30
-    permutations = []
+  #Select a random permutation and reorder crops
+  label = np.random.randint(len(permutations)) + 1
+  permutation = permutations[label - 1]
 
-    with open('permutations_hamming_%d.txt' %(num_perm)) as f:
-      lines = f.read().splitlines()
+  permutate_img = [crops[i] for i in permutation]
 
-    for l in lines:
-      permutations.append([int(i) for i in l.split()])
+  #Create the background for the new image
+  new_image = Image.new('RGB', (imgwidth, imgheight))
 
-    #Select a permutation and reorder crops
-    for permutation in permutations:
-      permutate_img = [crops[i] for i in permutation]
-
-      #Create the background for the new image
-      new_image = Image.new('RGB', (imgwidth, imgheight))
-
-      #Join crops
-      k = 0
-      for j in range(0, 3):
-        for i in range(0, 3):
-          new_image.paste(permutate_img[k], (i*int(x), j*int(y)))
-          k += 1
+  #Join crops
+  k = 0
+  for j in range(0, 3):
+    for i in range(0, 3):
+      new_image.paste(permutate_img[k], (i*int(x), j*int(y)))
+      k += 1
+  
+  return new_image, label
 
 class Dataset(data.Dataset):
-    def __init__(self, names, labels, path_dataset,img_transformer=None, beta=0.2):
+    def __init__(self, names, labels, path_dataset, img_transformer=None, beta=0.2):
         self.data_path = path_dataset
         self.names = names
         self.labels = labels
         self._image_transformer = img_transformer
         self.beta = beta
-
-        generate_jigsaw_puzzle(names, beta, self.data_path)
+        self.permutations = self.get_permutations()
+        self.amount = int(len(names) * beta)
+        self.n_scrambled = 0
 
     def __getitem__(self, index):
 
         framename = self.data_path + '/' + self.names[index]
+      
         img = Image.open(framename).convert('RGB')
         img = self._image_transformer(img)
 
-        return img, int(self.labels[index])
+        if self.n_scrambled < self.amount:
+          img, label = generate_jigsaw_puzzle(self.permutations, img)
+          self.n_scrambled += 1
+          print("Num mescolate: " + str(self.n_scrambled))
+          return img, int(self.labels[index]), label
+        print("Num dritte: " + str(len(self.names) - self.n_scrambled))
+        return img, int(self.labels[index]), int(0)
+
 
     def __len__(self):
         return len(self.names)
+
+    def get_permutations():
+      permutations = []
+
+      with open('permutations_hamming_30.txt') as f:
+        lines = f.read().splitlines()
+
+      for l in lines:
+        permutations.append([int(i) for i in l.split()])
+
+      return permutations
 
 
 

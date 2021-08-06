@@ -39,6 +39,8 @@ def get_args():
     # tensorboard logger
     parser.add_argument("--tf_logger", type=bool, default=True, help="If true will save tensorboard compatible logs")
     parser.add_argument("--folder_name", default=None, help="Used by the logger to save logs")
+
+    #Jigsaw Puzzle
     parser.add_argument("--beta", type=float, default=0.2, help="Percentage of images used to solve the Jigsaw puzzle")
 
     return parser.parse_args()
@@ -48,7 +50,6 @@ class Trainer:
     def __init__(self, args, device):
         self.args = args
         self.device = device
-        self.beta = args.beta
 
         model = model_factory.get_network(args.network)(classes=args.n_classes)
         self.model = model.to(device)
