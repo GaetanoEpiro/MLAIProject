@@ -138,6 +138,6 @@ class TestDataset(Dataset):
         img = Image.open(framename).convert('RGB')
         img = self._image_transformer(img)
 
-        return img, int(self.labels[index])
+        return img, int(self.labels[index]), int(0)
 
 

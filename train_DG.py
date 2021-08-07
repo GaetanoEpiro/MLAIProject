@@ -40,6 +40,9 @@ def get_args():
     parser.add_argument("--tf_logger", type=bool, default=True, help="If true will save tensorboard compatible logs")
     parser.add_argument("--folder_name", default=None, help="Used by the logger to save logs")
 
+    #Jigsaw parameters
+    parser.add_argument("--beta", type=float, default=0.2, help="Percentage of images used to solve the Jigsaw puzzle")
+
     return parser.parse_args()
 
 
@@ -48,7 +51,9 @@ class Trainer:
         self.args = args
         self.device = device
 
-        model = model_factory.get_network(args.network)(classes=args.n_classes)
+        self.jigsaw_alpha = 0.1
+
+        model = model_factory.get_network(args.network)(classes=args.n_classes, jigsaw_classes=31)
         self.model = model.to(device)
 
         self.source_loader, self.val_loader = data_helper.get_train_dataloader(args)
@@ -66,17 +71,20 @@ class Trainer:
     def _do_epoch(self):
         criterion = nn.CrossEntropyLoss()
         self.model.train()
-        for it, (data, class_l) in enumerate(self.source_loader):
+        for it, (data, class_l, jigsaw_label) in enumerate(self.source_loader):
 
-            data, class_l = data.to(self.device), class_l.to(self.device)
+            data, class_l, jigsaw_label = data.to(self.device), class_l.to(self.device), jigsaw_label.to(self.device)
 
             self.optimizer.zero_grad()
 
-            class_logit = self.model(data)
+            class_logit, jigasw_logit = self.model(data)
             class_loss = criterion(class_logit, class_l)
-            _, cls_pred = class_logit.max(dim=1)
+            jigsaw_loss = criterion(jigasw_logit, jigsaw_label)
 
-            loss = class_loss
+            _, cls_pred = class_logit.max(dim=1)
+            _, jigsaw_pred = jigasw_logit.max(dim=1)
+
+            loss = class_loss + jigsaw_loss * self.jigsaw_alpha
 
             loss.backward()
 
@@ -87,25 +95,45 @@ class Trainer:
                             {"Class Loss ": class_loss.item()},
                             {"Class Accuracy ": torch.sum(cls_pred == class_l.data).item()},
                             data.shape[0])
-            del loss, class_loss,class_logit
+
+            self.logger.log(it, len(self.source_loader),
+                            {"Jigsaw Loss ": class_loss.item()},
+                            {"Jigsaw Accuracy ": torch.sum(jigsaw_pred == jigsaw_label.data).item()},
+                            data.shape[0])
+
+            del loss, class_loss, class_logit, jigsaw_loss, jigasw_logit
 
         self.model.eval()
         with torch.no_grad():
             for phase, loader in self.test_loaders.items():
                 total = len(loader.dataset)
-                class_correct = self.do_test(loader)
+
+                class_correct, jigsaw_correct = self.do_test(loader)
+                
                 class_acc = float(class_correct) / total
+                jigsaw_acc = float(jigsaw_correct) / total
+
+                accuracy = (class_acc + jigsaw_acc) / 2
+
                 self.logger.log_test(phase, {"Classification Accuracy": class_acc})
                 self.results[phase][self.current_epoch] = class_acc
 
     def do_test(self, loader):
         class_correct = 0
-        for it, (data, class_l) in enumerate(loader):
-            data, class_l = data.to(self.device), class_l.to(self.device)
-            class_logit = self.model(data)
+        jigsaw_correct = 0
+
+        for it, (data, class_l, jigsaw_label) in enumerate(loader):
+            data, class_l, jigsaw_label = data.to(self.device), class_l.to(self.device), jigsaw_label.to(self.device)
+            
+            class_logit, jigsaw_logit = self.model(data)
+
             _, cls_pred = class_logit.max(dim=1)
+            _, jigsaw_pred = jigsaw_logit.max(dim=1)
+
             class_correct += torch.sum(cls_pred == class_l.data)
-        return class_correct
+            jigsaw_correct += torch.sum(jigsaw_pred == jigsaw_label.data)
+
+        return class_correct, jigsaw_correct
 
     def do_training(self):
         self.logger = Logger(self.args, update_frequency=30)

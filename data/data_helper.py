@@ -40,6 +40,7 @@ def get_train_dataloader(args):
 
 def get_jigsaw_dataloader(args):
 
+    #Only for DA
     names, labels = _dataset_info(join(dirname(__file__), 'txt_lists', args.target+'.txt'))
     img_tr = get_train_transformers(args)
 
