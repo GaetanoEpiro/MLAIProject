@@ -43,6 +43,9 @@ def get_args():
 
     #Jigsaw Puzzle
     parser.add_argument("--beta", type=float, default=0.2, help="Percentage of images used to solve the Jigsaw puzzle")
+    parser.add_argument("--alpha_target", type=float, default=0.5, help="Target Jigen loss weight during training")
+    parser.add_argument("--alpha_source", type=float, default=0.5, help="Source Jigen loss weight during training")
+    parser.add_argument("--loss_weight", type=float, default=0.1, help="Target class loss weight during training")
 
     return parser.parse_args()
 
@@ -54,10 +57,10 @@ class Trainer:
         self.args = args
         self.device = device
 
-        self.target_loss_wt = 0.1
-        self.alpha_target = 0.5
-        self.alpha_source = 0.5
-
+        self.target_loss_wt = args.loss_weight
+        self.alpha_target = args.alpha_target
+        self.alpha_source = args.alpha_source
+        
         model = model_factory.get_network(args.network)(classes=args.n_classes, jigsaw_classes=31)
         self.model = model.to(device)
 
@@ -135,7 +138,7 @@ class Trainer:
                 accuracy = (class_acc + jigsaw_acc) / 2
 
                 self.logger.log_test(phase, {"Classification Accuracy": accuracy})
-                self.results[phase][self.current_epoch] = class_acc
+                self.results[phase][self.current_epoch] = accuracy
 
     def do_test(self, loader):
         class_correct = 0
