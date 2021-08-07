@@ -3,13 +3,14 @@ import argparse
 import torch
 from torch import nn
 from torch.nn import functional as F
+from torch.utils import data
 from data import data_helper
 from data.data_helper import available_datasets
 from models import model_factory
 from optimizer.optimizer_helper import get_optim_and_scheduler
 from utils.Logger import Logger
-import numpy as np
-
+import itertools
+import torch.nn.functional as func
 
 def get_args():
     parser = argparse.ArgumentParser(description="Script to launch jigsaw training",
@@ -45,17 +46,24 @@ def get_args():
 
     return parser.parse_args()
 
+def entropy_loss(x):
+    return torch.sum(-func.softmax(x,1) * func.log_softmax(x,1),1).mean()
 
 class Trainer:
     def __init__(self, args, device):
         self.args = args
         self.device = device
 
-        model = model_factory.get_network(args.network)(classes=args.n_classes)
+        self.target_loss_wt = 0.1
+        self.alpha_target = 0.5
+        self.alpha_source = 0.5
+
+        model = model_factory.get_network(args.network)(classes=args.n_classes, jigsaw_classes=31)
         self.model = model.to(device)
 
         self.source_loader, self.val_loader = data_helper.get_train_dataloader(args)
         self.target_loader = data_helper.get_val_dataloader(args)
+        self.target_jigsaw = data_helper.get_jigsaw_dataloader(args)
 
         self.test_loaders = {"val": self.val_loader, "test": self.target_loader}
         self.len_dataloader = len(self.source_loader)
@@ -68,17 +76,35 @@ class Trainer:
     def _do_epoch(self):
         criterion = nn.CrossEntropyLoss()
         self.model.train()
-        for it, (data, class_l) in enumerate(self.source_loader):
+        for it, ((data, class_l, jigsaw_label), (data_target_jigsaw, class_target_jigsaw, target_jigsaw_label)) in enumerate(zip(self.source_loader, itertools.cycle(self.target_jigsaw))):
+        #for it, (data, class_l) in enumerate(self.source_loader):
 
-            data, class_l = data.to(self.device), class_l.to(self.device)
+            data, class_l, jigsaw_label = data.to(self.device), class_l.to(self.device), jigsaw_label.to(self.device)
+            data_target_jigsaw, class_target_jigsaw, target_jigsaw_label = data_target_jigsaw.to(self.device), class_target_jigsaw.to(self.device), target_jigsaw_label.to(self.device)
 
             self.optimizer.zero_grad()
 
-            class_logit = self.model(data)
+            #Source logit
+            class_logit, jigsaw_logit = self.model(data)
+            #Source loss 
             class_loss = criterion(class_logit, class_l)
-            _, cls_pred = class_logit.max(dim=1)
+            #Jigsaw loss
+            jigsaw_loss = criterion(jigsaw_logit, jigsaw_label)
 
-            loss = class_loss
+            #Target logit
+            class_logit_target, jigsaw_logit_target = self.model(data_target_jigsaw) 
+            #Target loss
+            class_target_loss = entropy_loss(class_logit_target)
+            #Target jigsaw loss
+            jigsaw_target_loss = criterion(jigsaw_logit_target, target_jigsaw_label)
+
+            _, cls_pred = class_logit.max(dim=1)
+            _, jigsaw_pred = jigsaw_logit.max(dim=1)
+
+            class_loss = class_loss + class_target_loss * self.target_loss_wt
+            jigsaw_loss = jigsaw_target_loss * self.alpha_target + jigsaw_loss * self.alpha_source
+            
+            loss = class_loss + jigsaw_loss
 
             loss.backward()
 
@@ -89,25 +115,44 @@ class Trainer:
                             {"Class Loss ": class_loss.item()},
                             {"Class Accuracy ": torch.sum(cls_pred == class_l.data).item()},
                             data.shape[0])
-            del loss, class_loss,class_logit
+
+            self.logger.log(it, len(self.source_loader),
+                            {"Jigsaw Loss ": jigsaw_loss.item()},
+                            {"Jigsaw Accuracy ": torch.sum(jigsaw_pred == jigsaw_label.data).item()},
+                            data.shape[0])
+
+            del class_logit, jigsaw_loss, jigsaw_logit, class_logit_target, jigsaw_logit_target, class_target_loss, jigsaw_target_loss, class_loss, loss
 
         self.model.eval()
         with torch.no_grad():
             for phase, loader in self.test_loaders.items():
                 total = len(loader.dataset)
-                class_correct = self.do_test(loader)
+                class_correct, jigsaw_correct = self.do_test(loader)
+
                 class_acc = float(class_correct) / total
-                self.logger.log_test(phase, {"Classification Accuracy": class_acc})
+                jigsaw_acc = float(jigsaw_correct) / total
+
+                accuracy = (class_acc + jigsaw_acc) / 2
+
+                self.logger.log_test(phase, {"Classification Accuracy": accuracy})
                 self.results[phase][self.current_epoch] = class_acc
 
     def do_test(self, loader):
         class_correct = 0
-        for it, (data, class_l) in enumerate(loader):
-            data, class_l = data.to(self.device), class_l.to(self.device)
-            class_logit = self.model(data)
+        jigsaw_correct = 0
+
+        for it, (data, class_l, jigsaw_label) in enumerate(loader):
+            data, class_l, jigsaw_label = data.to(self.device), class_l.to(self.device), jigsaw_label.to(self.device)
+            
+            class_logit, jigsaw_logit = self.model(data)
+            
             _, cls_pred = class_logit.max(dim=1)
+            _, jigsaw_pred = jigsaw_logit.max(dim=1)
+
             class_correct += torch.sum(cls_pred == class_l.data)
-        return class_correct
+            jigsaw_correct += torch.sum(jigsaw_pred == jigsaw_label.data)
+
+        return class_correct, jigsaw_correct
 
     def do_training(self):
         self.logger = Logger(self.args, update_frequency=30)

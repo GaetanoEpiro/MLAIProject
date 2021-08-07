@@ -38,13 +38,23 @@ def get_train_dataloader(args):
 
     return loader, val_loader
 
+def get_jigsaw_dataloader(args):
+
+    names, labels = _dataset_info(join(dirname(__file__), 'txt_lists', args.target+'.txt'))
+    img_tr = get_train_transformers(args)
+
+    train_dataset = Dataset(names, labels, args.path_dataset, img_transformer=img_tr, beta=args.beta)
+    dataset = ConcatDataset([train_dataset])
+    loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True, drop_last=False)
+
+    return loader
 
 def get_val_dataloader(args):
 
     names, labels = _dataset_info(join(dirname(__file__), 'txt_lists', args.target+'.txt'))
     img_tr = get_val_transformer(args)
 
-    val_dataset = TestDataset(names, labels,args.path_dataset, img_transformer=img_tr, beta=args.beta)
+    val_dataset = TestDataset(names, labels, args.path_dataset, img_transformer=img_tr, beta=args.beta)
     dataset = ConcatDataset([val_dataset])
     loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True, drop_last=False)
 

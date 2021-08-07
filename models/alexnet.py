@@ -8,7 +8,7 @@ from torch import nn as nn
 
 
 class AlexNet(nn.Module):
-    def __init__(self, n_classes=100, jigsaw_classes=31, dropout=True):
+    def __init__(self, n_classes=100, dropout=True, jigsaw_classes=31):
         super(AlexNet, self).__init__()
         print("Using  AlexNet")
         self.features = nn.Sequential(OrderedDict([
