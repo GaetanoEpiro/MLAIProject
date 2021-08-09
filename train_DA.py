@@ -110,7 +110,7 @@ class Trainer:
             jigsaw_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==1)], jigsaw_label[(task_type==0) | (task_type==1)])
 
             #Target logit
-            class_logit_target, jigsaw_logit_target, rotation_target = self.model(data_target_jigsaw) 
+            class_logit_target, jigsaw_logit_target, rotation_logit_target = self.model(data_target_jigsaw) 
 
             #Target loss if the task is classification 
             class_target_loss = entropy_loss(class_logit_target[task_type_target==0])
@@ -123,7 +123,7 @@ class Trainer:
                 rotation_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==2)], jigsaw_label[(task_type==0) | (task_type==2)])
 
                 #Target rotation loss if the target is classification or "rotation"
-                rotation_target_loss = criterion(jigsaw_logit_target[(task_type_target==0) | (task_type_target==2)], target_jigsaw_label[(task_type_target==0)| (task_type_target==2)])
+                rotation_target_loss = criterion(rotation_logit_target[(task_type_target==0) | (task_type_target==2)], target_jigsaw_label[(task_type_target==0)| (task_type_target==2)])
 
                 _, rotation_pred = rotation_logit.max(dim=1)
 
