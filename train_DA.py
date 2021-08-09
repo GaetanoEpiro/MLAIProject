@@ -42,12 +42,13 @@ def get_args():
     parser.add_argument("--folder_name", default=None, help="Used by the logger to save logs")
 
     #Jigsaw Puzzle
-    parser.add_argument("--beta", type=float, default=0.2, help="Percentage of images used to solve the Jigsaw puzzle")
+    parser.add_argument("--beta_scrambled", type=float, default=0.01, help="Percentage of images used to solve the Jigsaw puzzle")
     parser.add_argument("--alpha_target", type=float, default=0.5, help="Target Jigen loss weight during training")
     parser.add_argument("--alpha_source", type=float, default=0.5, help="Source Jigen loss weight during training")
     parser.add_argument("--loss_weight", type=float, default=0.1, help="Target class loss weight during training")
 
     parser.add_argument("--rotation", type=bool, default=False, help="")
+    parser.add_argument("--beta_rotated", type=float, default=0.1, help="Percentage of rotated images")
     parser.add_argument("--alpha_rotation_target", type=float, default=0.5, help="Target rotation loss weight during training")
     parser.add_argument("--alpha_rotation_source", type=float, default=0.5, help="Source rotation loss weight during training")
 
@@ -67,7 +68,7 @@ class Trainer:
         self.alpha_rotation_target = args.alpha_rotation_target
         self.alpha_rotation_source = args.alpha_rotation_source
         
-        model = model_factory.get_network(args.network)(classes=args.n_classes, jigsaw_classes=31)
+        model = model_factory.get_network(args.network)(classes=args.n_classes, jigsaw_classes=31, rotation_classes=4)
         self.model = model.to(device)
 
         self.source_loader, self.val_loader = data_helper.get_train_dataloader(args)
@@ -94,7 +95,7 @@ class Trainer:
             rotation_loss = 0
             rotation_target_loss = 0
 
-            data, class_l, jigsaw_label, task_type = data.to(self.device), class_l.to(self.device), jigsaw_label.to(self.device), task_type.to(self.device)
+            data, class_l, jigsaw_label, task_type = data.to(self.device), class_l.to(self.device), jigsaw_label.to(self.device), task_type.to(self.device)          
             data_target_jigsaw, class_target_jigsaw, target_jigsaw_label, task_type_target = data_target_jigsaw.to(self.device), class_target_jigsaw.to(self.device), target_jigsaw_label.to(self.device), task_type_target.to(self.device)
 
             self.optimizer.zero_grad()
@@ -106,23 +107,23 @@ class Trainer:
             class_loss = criterion(class_logit[task_type==0], class_l[task_type==0])
             
             #Jigsaw loss if the task is classification or "puzzle"
-            jigsaw_loss = criterion(jigsaw_logit[task_type==0 | task_type==1], jigsaw_label[task_type==0 | task_type==1])
+            jigsaw_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==1)], jigsaw_label[(task_type==0) | (task_type==1)])
 
             #Target logit
-            class_logit_target, jigsaw_logit_target = self.model(data_target_jigsaw) 
+            class_logit_target, jigsaw_logit_target, rotation_target = self.model(data_target_jigsaw) 
 
             #Target loss if the task is classification 
-            class_target_loss = entropy_loss(class_logit_target[task_type==0])
+            class_target_loss = entropy_loss(class_logit_target[task_type_target==0])
 
             #Target jigsaw loss if the task is classification or "puzzle"
-            jigsaw_target_loss = criterion(jigsaw_logit_target[task_type==0 | task_type==1], target_jigsaw_label[task_type==0 | task_type==1])
+            jigsaw_target_loss = criterion(jigsaw_logit_target[(task_type_target==0) | (task_type_target==1)], target_jigsaw_label[(task_type_target==0) | (task_type_target==1)])
 
             if self.args.rotation == True:
                 #Rotation loss if the task is classification of "rotation"
-                rotation_loss = criterion(jigsaw_logit[task_type==0 | task_type==2], jigsaw_label[task_type==0 | task_type==2])
+                rotation_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==2)], jigsaw_label[(task_type==0) | (task_type==2)])
 
                 #Target rotation loss if the target is classification or "rotation"
-                rotation_target_loss = criterion(jigsaw_logit_target[task_type==0 | task_type==2], target_jigsaw_label[task_type==0 | task_type==2])
+                rotation_target_loss = criterion(jigsaw_logit_target[(task_type_target==0) | (task_type_target==2)], target_jigsaw_label[(task_type_target==0)| (task_type_target==2)])
 
                 _, rotation_pred = rotation_logit.max(dim=1)
 
@@ -142,11 +143,16 @@ class Trainer:
             self.logger.log(it, len(self.source_loader),
                             {"Class Loss ": class_loss.item()},
                             {"Class Accuracy ": torch.sum(cls_pred == class_l.data).item()},
+                            data.shape[0])
+
+            self.logger.log(it, len(self.source_loader),
+                            {"Class Loss ": class_loss.item()},
                             {"Jigsaw Accuracy ": torch.sum(jigsaw_pred == jigsaw_label.data).item()},
                             data.shape[0])
 
             if self.args.rotation == True:
                 self.logger.log(it, len(self.source_loader),
+                                {"Class Loss ": class_loss.item()},
                                 {"Rotation Accuracy ": torch.sum(rotation_pred == jigsaw_label.data).item()},
                                 data.shape[0])
 

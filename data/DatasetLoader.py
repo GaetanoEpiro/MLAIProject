@@ -3,6 +3,7 @@ import torch.utils.data as data
 import torchvision.transforms as transforms
 from PIL import Image
 from random import sample
+import random
 
 def get_random_subset(names, labels, percent):
     """
@@ -113,13 +114,15 @@ class Dataset(data.Dataset):
         framename = self.data_path + '/' + self.names[index]
         img = Image.open(framename).convert('RGB')
 
+        task = random.randint(0, 2)
+
         #Tasks:
         # - 0: classification
         # - 1: jigsaw puzzle (permutations)
         # - 2: rotation 
         # - 3: odd one out
 
-        if self.n_scrambled < self.amount_scrambled:
+        if task==1 and self.n_scrambled < self.amount_scrambled:
           img, label = generate_jigsaw_puzzle(self.permutations, img)
           self.n_scrambled += 1
           img = self._image_transformer(img)
@@ -127,7 +130,7 @@ class Dataset(data.Dataset):
           #return image, image label, permutation label, task=permutation
           return img, int(self.labels[index]), label, int(1)
 
-        if self.rotation==True and self.n_rotated < self.amount_rotated:
+        if task==2 and self.rotation==True and self.n_rotated < self.amount_rotated:
           img, label = rotate_image(self.permutations, img)
           self.n_rotated += 1
           img = self._image_transformer(img)
@@ -167,6 +170,6 @@ class TestDataset(Dataset):
         img = Image.open(framename).convert('RGB')
         img = self._image_transformer(img)
 
-        return img, int(self.labels[index]), int(0)
+        return img, int(self.labels[index]), int(0), int(0)
 
 
