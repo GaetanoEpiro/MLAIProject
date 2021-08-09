@@ -1,11 +1,8 @@
 import numpy as np
-import torch
 import torch.utils.data as data
-import torchvision
 import torchvision.transforms as transforms
 from PIL import Image
-from random import sample, random
-
+from random import sample
 
 def get_random_subset(names, labels, percent):
     """
@@ -82,34 +79,66 @@ def generate_jigsaw_puzzle(permutations, image):
   
   return new_image, label
 
+def rotate_image(image):
+
+  label = sample.randint(1, 3)
+
+  switch = {
+      1: image.transpose(Image.ROTATE_90),
+      2: image.transpose(Image.ROTATE_180),
+      3: image.transpose(Image.ROTATE_270)
+  }
+
+  image = switch.get(label)
+
+  return image, label
+
+
 class Dataset(data.Dataset):
-    def __init__(self, names, labels, path_dataset, img_transformer=None, beta=0.2):
+    def __init__(self, names, labels, path_dataset, img_transformer=None, beta_scrambled=0.2, beta_rotated=0.1, rotation=False):
         self.data_path = path_dataset
         self.names = names
         self.labels = labels
         self._image_transformer = img_transformer
-        self.beta = beta
+        self.beta = beta_scrambled
         self.permutations = self.get_permutations()
-        self.amount = int(len(names) * beta)
+        self.amount_scrambled = int(len(names) * beta_scrambled)
+        self.amount_rotated = int(len(names) * beta_rotated)
         self.n_scrambled = 0
+        self.rotation = rotation
+        self.n_rotated = 0
 
     def __getitem__(self, index):
         
         framename = self.data_path + '/' + self.names[index]
         img = Image.open(framename).convert('RGB')
 
-        if self.n_scrambled < self.amount:
+        #Tasks:
+        # - 0: classification
+        # - 1: jigsaw puzzle (permutations)
+        # - 2: rotation 
+        # - 3: odd one out
+
+        if self.n_scrambled < self.amount_scrambled:
           img, label = generate_jigsaw_puzzle(self.permutations, img)
-          
           self.n_scrambled += 1
-          
           img = self._image_transformer(img)
 
-          return img, int(self.labels[index]), label
+          #return image, image label, permutation label, task=permutation
+          return img, int(self.labels[index]), label, int(1)
+
+        if self.rotation==True and self.n_rotated < self.amount_rotated:
+          img, label = rotate_image(self.permutations, img)
+          self.n_rotated += 1
+          img = self._image_transformer(img)
+
+          #return image, image label, rotation label, task=rotation 
+          return img, int(self.labels[index]), label, int(2)
 
         img = self._image_transformer(img)
 
-        return img, int(self.labels[index]), int(0)
+        #return image, image label, permutate=false, task=classification
+        return img, int(self.labels[index]), int(0), int(0)
 
 
     def __len__(self):

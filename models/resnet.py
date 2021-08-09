@@ -4,7 +4,7 @@ from torchvision.models.resnet import BasicBlock, model_urls, Bottleneck
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, layers, classes=100, jigsaw_classes=31):
+    def __init__(self, block, layers, classes=100, jigsaw_classes=31, rotation_classes=4):
         self.inplanes = 64
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
@@ -20,6 +20,7 @@ class ResNet(nn.Module):
         self.class_classifier = nn.Linear(512 * block.expansion, classes)
 
         self.jigsaw_classifier = nn.Linear(512 * block.expansion, jigsaw_classes)
+        self.rotation_classifier = nn.Linear(512 * block.expansion, rotation_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
