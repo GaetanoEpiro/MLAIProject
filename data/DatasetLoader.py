@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 from random import sample
 import random
+import math 
 
 def get_random_subset(names, labels, percent):
     """
@@ -43,24 +44,16 @@ def get_split_dataset_info(txt_list, val_percentage):
 def generate_jigsaw_puzzle(permutations, image):
   
   imgwidth, imgheight = image.size
-
-  new_width = imgwidth + 1
-  new_height = imgheight + 1 
-
-  result = Image.new(image.mode, (new_width, new_height), (0, 0, 255))
-  result.paste(image, (0, 0))
-
-  imgwidth, imgheight = result.size
     
-  x = imgwidth / 3
-  y = imgheight / 3
+  x = math.ceil(imgwidth / 3)
+  y = math.ceil(imgheight / 3)
 
   crops = []
   
-  for i in range(0, imgwidth, int(x)):
-    for j in range(0, imgwidth, int(y)):
-      img = result.crop((j, i, int(j+x), int(i+y)))
-      crops.append(img)
+  for i in range(0, imgwidth, x):
+    for j in range(0, imgheight, y):
+      crop = image.crop((j, i, j+x, i+y))
+      crops.append(crop)
 
   #Select a random permutation and reorder crops
   label = np.random.randint(len(permutations)) + 1
@@ -94,9 +87,53 @@ def rotate_image(image):
 
   return image, label
 
+def generate_odd_one_out_image(image, names, path):
+
+  #Divide the image into crops
+  image_crops = []
+
+  imgwidth, imgheight = image.size
+
+  x = math.ceil(imgwidth / 3)
+  y = math.ceil(imgheight / 3)
+
+  for i in range(0, imgwidth, x):
+    for j in range(0, imgheight, y):
+      crop = image.crop((j, i, j+x, i+y))
+      image_crops.append(crop)
+
+  #Select a random image
+  index = random.randint(0, len(names))
+
+  framename = path + '/' + names[index]
+  random_image = Image.open(framename).convert('RGB')
+
+  crops = []
+
+  #Divide the random image into crops
+  for i in range(0, imgwidth, x):
+    for j in range(0, imgheight, y):
+      crop = random_image.crop((j, i, j+x, i+y))
+      crops.append(crop)
+
+  #Select a random crop
+  pos = random.randint(0, 8)
+
+  #Replace the crop inside the original image
+  image_crops[pos] = crops[pos]
+
+  new_image = Image.new('RGB', (imgwidth, imgheight))
+
+  k = 0
+  for j in range(0, 3):
+    for i in range(0, 3):
+      new_image.paste(image_crops[k], (i*x, j*y))
+      k += 1
+
+  return new_image, pos
 
 class Dataset(data.Dataset):
-    def __init__(self, names, labels, path_dataset, img_transformer=None, beta_scrambled=0.2, beta_rotated=0.1, rotation=False):
+    def __init__(self, names, labels, path_dataset, img_transformer=None, beta_scrambled=0.2, beta_rotated=0.1, beta_odd=0.1, rotation=False, odd=False):
         self.data_path = path_dataset
         self.names = names
         self.labels = labels
@@ -105,16 +142,23 @@ class Dataset(data.Dataset):
         self.permutations = self.get_permutations()
         self.amount_scrambled = int(len(names) * beta_scrambled)
         self.amount_rotated = int(len(names) * beta_rotated)
+        self.amount_odd = int(len(names) * beta_odd)
         self.n_scrambled = 0
-        self.rotation = rotation
         self.n_rotated = 0
+        self.n_odd = 0
+
+        self.nTasks = 2
+        if rotation==True:
+          self.nTasks += 1
+        if odd==True:
+          self.nTasks += 1
 
     def __getitem__(self, index):
         
         framename = self.data_path + '/' + self.names[index]
         img = Image.open(framename).convert('RGB')
 
-        task = random.randint(0, 2)
+        task = random.randint(0, self.nTasks)
 
         #Tasks:
         # - 0: classification
@@ -130,13 +174,21 @@ class Dataset(data.Dataset):
           #return image, image label, permutation label, task=permutation
           return img, int(self.labels[index]), label, int(1)
 
-        if task==2 and self.rotation==True and self.n_rotated < self.amount_rotated:
-          img, label = rotate_image(self.permutations, img)
+        if task==2 and self.args.rotation==True and self.n_rotated < self.amount_rotated:
+          img, label = rotate_image(img)
           self.n_rotated += 1
           img = self._image_transformer(img)
 
           #return image, image label, rotation label, task=rotation 
           return img, int(self.labels[index]), label, int(2)
+
+        if task==3 and self.args.odd==True and self.n_odd < self.amount_odd:
+          img, label = generate_odd_one_out_image(img, self.names, self.data_path)
+          self.n_odd += 1
+          img = self._image_transformer(img)
+
+          #return image, image label, rotation label, task=odd one out
+          return img, int(self.labels[index]), label, int(3)
 
         img = self._image_transformer(img)
 

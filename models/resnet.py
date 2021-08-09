@@ -4,7 +4,7 @@ from torchvision.models.resnet import BasicBlock, model_urls, Bottleneck
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, layers, classes=100, jigsaw_classes=31, rotation_classes=4):
+    def __init__(self, block, layers, classes=100, jigsaw_classes=31, rotation_classes=4, odd_classes=9):
         self.inplanes = 64
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
@@ -21,6 +21,7 @@ class ResNet(nn.Module):
 
         self.jigsaw_classifier = nn.Linear(512 * block.expansion, jigsaw_classes)
         self.rotation_classifier = nn.Linear(512 * block.expansion, rotation_classes)
+        self.odd_classifier = nn.Linear(512 * block.expansion, odd_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -63,15 +64,15 @@ class ResNet(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
 
-        return self.class_classifier(x), self.jigsaw_classifier(x), self.rotation_classifier(x)
+        return self.class_classifier(x), self.jigsaw_classifier(x), self.rotation_classifier(x), self.odd_classifier(x)
 
 
-def resnet18(classes, jigsaw_classes, rotation_classes, pretrained=True, **kwargs):
+def resnet18(classes, jigsaw_classes, rotation_classes, odd_classes, pretrained=True, **kwargs):
     """Constructs a ResNet-18 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(BasicBlock, [2, 2, 2, 2], classes, jigsaw_classes, rotation_classes, **kwargs)
+    model = ResNet(BasicBlock, [2, 2, 2, 2], classes, jigsaw_classes, rotation_classes, odd_classes, **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet18']), strict=False)
     return model

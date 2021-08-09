@@ -52,6 +52,10 @@ def get_args():
     parser.add_argument("--alpha_rotation_target", type=float, default=0.5, help="Target rotation loss weight during training")
     parser.add_argument("--alpha_rotation_source", type=float, default=0.5, help="Source rotation loss weight during training")
 
+    parser.add_argument("--odd_one_out", type=bool, default=False, help="")
+    parser.add_argument("--beta_odd", type=float, default=0.1, help="")
+    parser.add_argument("--alpha_odd_target", type=float, default=0.5, help="")
+    parser.add_argument("--alpha_odd_source", type=float, default=0.5, help="")
     return parser.parse_args()
 
 def entropy_loss(x):
@@ -62,13 +66,7 @@ class Trainer:
         self.args = args
         self.device = device
 
-        self.target_loss_wt = args.loss_weight
-        self.alpha_target = args.alpha_target
-        self.alpha_source = args.alpha_source
-        self.alpha_rotation_target = args.alpha_rotation_target
-        self.alpha_rotation_source = args.alpha_rotation_source
-        
-        model = model_factory.get_network(args.network)(classes=args.n_classes, jigsaw_classes=31, rotation_classes=4)
+        model = model_factory.get_network(args.network)(classes=args.n_classes, jigsaw_classes=31, rotation_classes=4, odd_classes=9)
         self.model = model.to(device)
 
         self.source_loader, self.val_loader = data_helper.get_train_dataloader(args)
@@ -94,6 +92,8 @@ class Trainer:
 
             rotation_loss = 0
             rotation_target_loss = 0
+            odd_loss = 0
+            odd_target_loss = 0
 
             data, class_l, jigsaw_label, task_type = data.to(self.device), class_l.to(self.device), jigsaw_label.to(self.device), task_type.to(self.device)          
             data_target_jigsaw, class_target_jigsaw, target_jigsaw_label, task_type_target = data_target_jigsaw.to(self.device), class_target_jigsaw.to(self.device), target_jigsaw_label.to(self.device), task_type_target.to(self.device)
@@ -101,7 +101,7 @@ class Trainer:
             self.optimizer.zero_grad()
 
             #Source logit
-            class_logit, jigsaw_logit, rotation_logit = self.model(data)
+            class_logit, jigsaw_logit, rotation_logit, odd_logit = self.model(data)
             
             #Source loss only for classification
             class_loss = criterion(class_logit[task_type==0], class_l[task_type==0])
@@ -127,14 +127,24 @@ class Trainer:
 
                 _, rotation_pred = rotation_logit.max(dim=1)
 
+            if self.args.odd == True:
+                #Odd one out loss if the task is classification of "rotation"
+                odd_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==3)], jigsaw_label[(task_type==0) | (task_type==3)])
+
+                #Target rotation loss if the target is classification or "rotation"
+                odd_target_loss = criterion(rotation_logit_target[(task_type_target==0) | (task_type_target==3)], target_jigsaw_label[(task_type_target==0)| (task_type_target==3)])
+
+                _, odd_pred = odd_logit.max(dim=1)
+
             _, cls_pred = class_logit.max(dim=1)
             _, jigsaw_pred = jigsaw_logit.max(dim=1)
 
-            class_loss = class_loss + class_target_loss * self.target_loss_wt
-            jigsaw_loss = jigsaw_target_loss * self.alpha_target + jigsaw_loss * self.alpha_source
-            rotation_loss = rotation_target_loss * self.alpha_rotation_target + rotation_loss * self.alpha_rotation_source
+            class_loss = class_loss + class_target_loss * self.args.target_loss_wt
+            jigsaw_loss = jigsaw_target_loss * self.args.alpha_target + jigsaw_loss * self.args.alpha_source
+            rotation_loss = rotation_target_loss * self.args.alpha_rotation_target + rotation_loss * self.args.alpha_rotation_source
+            odd_loss = odd_target_loss * self.args.alpha_odd_target + odd_loss * self.args.alpha_odd_source
 
-            loss = class_loss + jigsaw_loss + rotation_loss
+            loss = class_loss + jigsaw_loss + rotation_loss + odd_loss
 
             loss.backward()
 
@@ -156,14 +166,21 @@ class Trainer:
                                 {"Rotation Accuracy ": torch.sum(rotation_pred == jigsaw_label.data).item()},
                                 data.shape[0])
 
+            if self.args.odd == True:
+                self.logger.log(it, len(self.source_loader),
+                                {"Class Loss ": class_loss.item()},
+                                {"Odd one out Accuracy ": torch.sum(odd_pred == jigsaw_label.data).item()},
+                                data.shape[0])
+
             del class_logit, jigsaw_loss, jigsaw_logit, class_logit_target, jigsaw_logit_target, class_target_loss, jigsaw_target_loss, class_loss, loss
             del rotation_logit, rotation_loss, rotation_target_loss
+            del odd_loss, odd_logit, odd_target_loss
 
         self.model.eval()
         with torch.no_grad():
             for phase, loader in self.test_loaders.items():
                 total = len(loader.dataset)
-                class_correct, jigsaw_correct, rotation_correct = self.do_test(loader)
+                class_correct, jigsaw_correct, rotation_correct, odd_correct = self.do_test(loader)
 
                 class_acc = float(class_correct) / total
                 jigsaw_acc = float(jigsaw_correct) / total
@@ -171,8 +188,11 @@ class Trainer:
                 if self.args.rotation == True:
                     rotation_acc = float(rotation_correct) / total
 
+                if self.args.odd == True:
+                    odd_acc = float(odd_correct) / total
+
                 #TO DO: nTASKS
-                accuracy = (class_acc + jigsaw_acc + rotation_acc) / 3
+                accuracy = (class_acc + jigsaw_acc + rotation_acc + odd_acc) / 4
 
                 self.logger.log_test(phase, {"Classification Accuracy": accuracy})
                 self.results[phase][self.current_epoch] = accuracy
@@ -181,11 +201,12 @@ class Trainer:
         class_correct = 0
         jigsaw_correct = 0
         rotation_correct = 0
+        odd_correct = 0
 
         for it, (data, class_l, jigsaw_label, task_type) in enumerate(loader):
             data, class_l, jigsaw_label, task_type = data.to(self.device), class_l.to(self.device), jigsaw_label.to(self.device), task_type.to(self.device)
             
-            class_logit, jigsaw_logit, rotation_logit = self.model(data)
+            class_logit, jigsaw_logit, rotation_logit, odd_logit = self.model(data)
             
             _, cls_pred = class_logit.max(dim=1)
             _, jigsaw_pred = jigsaw_logit.max(dim=1)
@@ -193,11 +214,15 @@ class Trainer:
             if self.args.rotation == True:
                 _, rotation_pred = rotation_logit.max(dim=1)
                 rotation_correct += torch.sum(rotation_pred == jigsaw_label.data)
+    
+            if self.args.odd == True:
+                _, odd_pred = rotation_logit.max(dim=1)
+                odd_correct += torch.sum(odd_pred == jigsaw_label.data)
 
             class_correct += torch.sum(cls_pred == class_l.data)
             jigsaw_correct += torch.sum(jigsaw_pred == jigsaw_label.data)
 
-        return class_correct, jigsaw_correct, rotation_correct
+        return class_correct, jigsaw_correct, rotation_correct, odd_correct
 
     def do_training(self):
         self.logger = Logger(self.args, update_frequency=30)
