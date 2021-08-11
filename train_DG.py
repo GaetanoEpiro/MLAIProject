@@ -41,7 +41,7 @@ def get_args():
     parser.add_argument("--folder_name", default=None, help="Used by the logger to save logs")
 
     #Jigsaw parameters
-    parser.add_argument("--beta", type=float, default=0.2, help="Percentage of images used to solve the Jigsaw puzzle")
+    parser.add_argument("--beta_scrambled", type=float, default=0.2, help="Percentage of images used to solve the Jigsaw puzzle")
     parser.add_argument("--jigsaw_alpha", type=float, default=0.1, help="Jigen loss weight during training")
 
     parser.add_argument("--rotation", type=bool, default=False, help="")
@@ -105,13 +105,13 @@ class Trainer:
 
             if self.args.rotation == True:
                 #Rotation loss if the task is classification of "rotation"
-                rotation_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==2)], jigsaw_label[(task_type==0) | (task_type==2)])
+                rotation_loss = criterion(rotation_logit[(task_type==0) | (task_type==2)], jigsaw_label[(task_type==0) | (task_type==2)])
 
                 _, rotation_pred = rotation_logit.max(dim=1)
 
             if self.args.odd_one_out == True:
                 #Odd one out loss if the task is classification of "rotation"
-                odd_one_out_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==3)], jigsaw_label[(task_type==0) | (task_type==3)])
+                odd_one_out_loss = criterion(odd_logit[(task_type==0) | (task_type==3)], jigsaw_label[(task_type==0) | (task_type==3)])
 
                 _, odd_pred = odd_logit.max(dim=1)
 

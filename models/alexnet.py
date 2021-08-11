@@ -61,8 +61,8 @@ class AlexNet(nn.Module):
         x = self.classifier(x)
         return self.class_classifier(x), self.jigsaw_classifier(x), self.rotation_classifier(x), self.odd_classifier(x)
 
-def alexnet(classes, jigsaw_classes):
-    model = AlexNet(classes, jigsaw_classes)
+def alexnet(classes, jigsaw_classes, rotation_classes, odd_classes):
+    model = AlexNet(classes, jigsaw_classes, rotation_classes, odd_classes)
     for m in model.modules():
         if isinstance(m, nn.Linear):
             nn.init.xavier_uniform_(m.weight, .1)
