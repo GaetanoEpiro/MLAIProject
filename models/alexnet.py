@@ -44,7 +44,7 @@ class AlexNet(nn.Module):
 
     def get_params(self, base_lr):
         return [{"params": self.features.parameters(), "lr": 0.},
-                {"params": chain(self.classifier.parameters(),  self.jigsaw_classifier.parameters(), self.class_classifier.parameters()), "lr": base_lr}]
+                {"params": chain(self.classifier.parameters(),  self.class_classifier.parameters(), self.jigsaw_classifier.parameters(), self.rotation_classifier.parameters(), self.odd_classifier.parameters()), "lr": base_lr}]
 
     def forward(self, x, lambda_val=0):
 
@@ -59,6 +59,7 @@ class AlexNet(nn.Module):
         x = self.features(x*57.6)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
+        
         return self.class_classifier(x), self.jigsaw_classifier(x), self.rotation_classifier(x), self.odd_classifier(x)
 
 def alexnet(classes, jigsaw_classes, rotation_classes, odd_classes):

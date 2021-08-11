@@ -83,7 +83,6 @@ class Trainer:
         self.n_classes = args.n_classes
 
         self.nTasks = 2
-        print(args.rotation)
         if args.rotation == True:
             self.nTasks += 1
         if args.odd_one_out == True:
@@ -130,7 +129,7 @@ class Trainer:
 
             if self.args.rotation == True:
                 #Rotation loss if the task is classification of "rotation"
-                rotation_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==2)], jigsaw_label[(task_type==0) | (task_type==2)])
+                rotation_loss = criterion(rotation_logit[(task_type==0) | (task_type==2)], jigsaw_label[(task_type==0) | (task_type==2)])
 
                 #Target rotation loss if the target is classification or "rotation"
                 rotation_target_loss = criterion(rotation_logit_target[(task_type_target==0) | (task_type_target==2)], target_jigsaw_label[(task_type_target==0)| (task_type_target==2)])
@@ -139,7 +138,7 @@ class Trainer:
 
             if self.args.odd_one_out == True:
                 #Odd one out loss if the task is classification of "rotation"
-                odd_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==3)], jigsaw_label[(task_type==0) | (task_type==3)])
+                odd_loss = criterion(odd_logit[(task_type==0) | (task_type==3)], jigsaw_label[(task_type==0) | (task_type==3)])
 
                 #Target rotation loss if the target is classification or "rotation"
                 odd_target_loss = criterion(odd_logit_target[(task_type_target==0) | (task_type_target==3)], target_jigsaw_label[(task_type_target==0)| (task_type_target==3)])

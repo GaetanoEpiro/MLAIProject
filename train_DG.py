@@ -64,7 +64,6 @@ class Trainer:
         self.source_loader, self.val_loader = data_helper.get_train_dataloader(args)
         self.target_loader = data_helper.get_val_dataloader(args)
 
-
         self.test_loaders = {"val": self.val_loader, "test": self.target_loader}
         self.len_dataloader = len(self.source_loader)
         print("Dataset size: train %d, val %d, test %d" % (len(self.source_loader.dataset), len(self.val_loader.dataset), len(self.target_loader.dataset)))
@@ -74,7 +73,6 @@ class Trainer:
         self.n_classes = args.n_classes
 
         self.nTasks = 2
-        print(args.rotation)
         if args.rotation == True:
             self.nTasks += 1
         if args.odd_one_out == True:
@@ -97,8 +95,8 @@ class Trainer:
             self.optimizer.zero_grad()
 
             class_logit, jigsaw_logit, rotation_logit, odd_logit = self.model(data)
-            class_loss = criterion(class_logit, class_l)
-            jigsaw_loss = criterion(jigsaw_logit, jigsaw_label)
+            class_loss = criterion(class_logit[task_type==0], class_l[task_type==0])
+            jigsaw_loss = criterion(jigsaw_logit[(task_type==0) | (task_type==1)], jigsaw_label[(task_type==0) | (task_type==1)])
 
             _, cls_pred = class_logit.max(dim=1)
             _, jigsaw_pred = jigsaw_logit.max(dim=1)

@@ -68,7 +68,7 @@ def generate_jigsaw_puzzle(permutations, image):
   k = 0
   for j in range(0, 3):
     for i in range(0, 3):
-      new_image.paste(permutate_img[k], (i*int(x), j*int(y)))
+      new_image.paste(permutate_img[k], (i*x, j*y))
       k += 1
   
   return new_image, label
