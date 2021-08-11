@@ -146,6 +146,8 @@ class Dataset(data.Dataset):
         self.n_scrambled = 0
         self.n_rotated = 0
         self.n_odd = 0
+        self.rotation = rotation
+        self.odd = odd
 
         self.nTasks = 2
         if rotation==True:
@@ -174,7 +176,7 @@ class Dataset(data.Dataset):
           #return image, image label, permutation label, task=permutation
           return img, int(self.labels[index]), label, int(1)
 
-        if task==2 and self.args.rotation==True and self.n_rotated < self.amount_rotated:
+        if task==2 and self.rotation==True and self.n_rotated < self.amount_rotated:
           img, label = rotate_image(img)
           self.n_rotated += 1
           img = self._image_transformer(img)
@@ -182,7 +184,7 @@ class Dataset(data.Dataset):
           #return image, image label, rotation label, task=rotation 
           return img, int(self.labels[index]), label, int(2)
 
-        if task==3 and self.args.odd==True and self.n_odd < self.amount_odd:
+        if task==3 and self.odd==True and self.n_odd < self.amount_odd:
           img, label = generate_odd_one_out_image(img, self.names, self.data_path)
           self.n_odd += 1
           img = self._image_transformer(img)
