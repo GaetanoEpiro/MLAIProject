@@ -252,10 +252,10 @@ class Dataset(data.Dataset):
 
       #for ciao, style in enumerate(styles_chosen): 
       s = 0
-      for i in range(3): 
-        for j in range(3): 
+      for i in range(0, imgwidth, x): 
+        for j in range(0, imgheight, y): 
 
-          img_t = trans(img.crop([i * x, j * x, (i + 1) * x, (j + 1) * x])).unsqueeze(0).to(self.device)
+          img_t = trans(img.crop((j, i, j+x, i+y))).unsqueeze(0).to(self.device)
           style_t = trans(styles_chosen[s]).unsqueeze(0).to(self.device)
 
           with torch.no_grad():
@@ -267,7 +267,7 @@ class Dataset(data.Dataset):
           out = transforms.Resize([x, y])(out)
 
           s += 1
-
+      
           crops.append(out)
 
       # transform out in an image in order to do the same crops we did in generate_jigsaw_puzzle
@@ -308,11 +308,6 @@ class Dataset(data.Dataset):
         for i in range(0, 3):
           n_image.paste(permutate_img[k], (i*x, j*y))
           k += 1
-
-      path_image = '/content/MLAIProject/images/'
-      name = path_image + str(index) + ".jpg"
-      print(name)
-      new_image.save(name)
 
       return n_image, label
     
