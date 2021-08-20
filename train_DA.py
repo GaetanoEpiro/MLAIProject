@@ -57,6 +57,10 @@ def get_args():
     parser.add_argument("--alpha_odd_target", type=float, default=0.5, help="")
     parser.add_argument("--alpha_odd_source", type=float, default=0.5, help="")
 
+    #Style Transfer 
+    parser.add_argument("--jigsaw_style_transform", "-jt", type=bool, default=False, help="Enables style transfer for jigsaw")
+
+
     return parser.parse_args()
 
 def entropy_loss(x):
