@@ -50,6 +50,8 @@ def get_args():
     parser.add_argument("--odd_one_out", type=bool, default=False, help="")
     parser.add_argument("--beta_odd", type=float, default=0.1, help="")
 
+    parser.add_argument("--jigsaw_style_transfer", "-jt", type=bool, default=True, help="Enables style transfer for jigsaw")
+    
     return parser.parse_args()
 
 
@@ -61,7 +63,7 @@ class Trainer:
         model = model_factory.get_network(args.network)(classes=args.n_classes, jigsaw_classes=31, rotation_classes=4, odd_classes=9)
         self.model = model.to(device)
 
-        self.source_loader, self.val_loader = data_helper.get_train_dataloader(args)
+        self.source_loader, self.val_loader = data_helper.get_train_dataloader(args, "DG", self.device)
         self.target_loader = data_helper.get_val_dataloader(args)
 
         self.test_loaders = {"val": self.val_loader, "test": self.target_loader}

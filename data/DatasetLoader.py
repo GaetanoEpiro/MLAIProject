@@ -136,7 +136,7 @@ def generate_odd_one_out_image(image, names, path):
   return new_image, pos
 
 class Dataset(data.Dataset):
-    def __init__(self, names, labels, path_dataset, type_domain, target, jigsaw_style_transfer, img_transformer=None, beta_scrambled=0.2, beta_rotated=0.1, beta_odd=0.1, rotation=False, odd=False):
+    def __init__(self, names, labels, path_dataset, type_domain=None, target=None, jigsaw_style_transfer=None, device=None, img_transformer=None, beta_scrambled=0.2, beta_rotated=0.1, beta_odd=0.1, rotation=False, odd=False):
         self.data_path = path_dataset
         self.names = names
         self.labels = labels
@@ -151,7 +151,7 @@ class Dataset(data.Dataset):
         self.n_odd = 0
         self.rotation = rotation
         self.odd = odd
-
+        self.device = device
 
         # Style Transfer 
         self.type_domain = type_domain
@@ -178,12 +178,10 @@ class Dataset(data.Dataset):
       #elif self.type_domain == "DA": 
         #name_model = "style_transfer_model_" + "All"
       
-      name_model = "style_transfer_model"
-      model_state = torch.load("models/pretrained/" + name_model, map_location=lambda storage, loc: storage)
+      name_model = "model_state.pth"
+      model_state = torch.load("/content/drive/MyDrive/" + name_model, map_location=lambda storage, loc: storage)
       model.load_state_dict(model_state, strict=False)
       model = model.to(self.device)
-
-
 
       return model
 
@@ -236,41 +234,43 @@ class Dataset(data.Dataset):
         img_chosen = os.listdir(new_path)[np.random.randint(len(os.listdir(new_path)))]
         new_path = new_path + "/" + img_chosen
 
-        new_img_chosen = self._image_transformer(Image.open(new_path).covert("RGB"))
+        #new_img_chosen = self._image_transformer(Image.open(new_path))
+        new_img_chosen = Image.open(new_path)
         styles_chosen.append(new_img_chosen)
-      
-      
-
+    
       normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
       trans = transforms.Compose([transforms.ToTensor(), normalize])
         
-      img_size = img.size[0]
-      length = img_size / 3
-
+      imgwidth, imgheight = img.size
+     
+     # img_size = img.size[0]
+     # length = img_size / 3
+      x = math.ceil(imgwidth / 3)
+      y = math.ceil(imgheight / 3)
 
       crops = []
 
-      for index, style in enumerate(styles_chosen): 
-        for i in range(3): 
-          for j in range(3): 
+      #for ciao, style in enumerate(styles_chosen): 
+      s = 0
+      for i in range(3): 
+        for j in range(3): 
 
-            style_t = trans(style).unsqueeze(0).to(self.device)
-            img_t = trans(img.crop([i * length, j * length, (i + 1) * length, (j + 1) * length])).unsqueeze(0).to(self.device)
+          img_t = trans(img.crop([i * x, j * x, (i + 1) * x, (j + 1) * x])).unsqueeze(0).to(self.device)
+          style_t = trans(styles_chosen[s]).unsqueeze(0).to(self.device)
 
-            with torch.no_grad():
-              out = self.style_model.generate(img_t, style_t, 1)
+          with torch.no_grad():
+            out = self.style_model.generate(img_t, style_t, 1)
 
-            out = self.denorm(out)
-            out = torch.squeeze(out)
-            crops.append(out)
-            
+          out = self.denorm(out)
+          out = torch.squeeze(out)
+          out = transforms.ToPILImage(mode="RGB")(out)
+          out = transforms.Resize([x, y])(out)
 
-            # transform out in an image in order to do the same crops we did in generate_jigsaw_puzzle
+          s += 1
 
-      imgwidth, imgheight = image.size
-    
-      x = math.ceil(imgwidth / 3)
-      y = math.ceil(imgheight / 3)
+          crops.append(out)
+
+      # transform out in an image in order to do the same crops we did in generate_jigsaw_puzzle
       new_image = Image.new('RGB', (imgwidth, imgheight))
 
       #Join crops
@@ -281,8 +281,8 @@ class Dataset(data.Dataset):
           k += 1
   
 
-      new_image = transforms.ToPILImage(mode="RGB")(new_image)
-      new_image = transforms.Resize([img_size, img_size])(new_image)
+      #new_image = transforms.ToPILImage(mode="RGB")(new_image)
+      #new_image = transforms.Resize([img_size, img_size])(new_image)
 
 
       # crop the image and then do the jigsaw puzzle 
@@ -308,14 +308,13 @@ class Dataset(data.Dataset):
         for i in range(0, 3):
           n_image.paste(permutate_img[k], (i*x, j*y))
           k += 1
-      
+
+      path_image = '/content/MLAIProject/images/'
+      name = path_image + str(index) + ".jpg"
+      print(name)
+      new_image.save(name)
+
       return n_image, label
-
-
-      
-
-
-    
     
     def __getitem__(self, index):
         
@@ -331,10 +330,12 @@ class Dataset(data.Dataset):
         # - 3: odd one out
 
         if task==1 and self.n_scrambled < self.amount_scrambled:
-          # if self.jigsaw_style_transfer == true then i call function change_style(img, index)
-          img, label = generate_jigsaw_puzzle(self.permutations, img)
-          self.n_scrambled += 1
-          img = self._image_transformer(img)
+          if self.jigsaw_style_transfer == True: #then i call function change_style(img, index)
+            #TODO
+            #img, label = generate_jigsaw_puzzle(self.permutations, img)
+            img, label = self.change_style(img, index)
+            self.n_scrambled += 1
+            img = self._image_transformer(img)
 
           #return image, image label, permutation label, task=permutation
           return img, int(self.labels[index]), label, int(1)

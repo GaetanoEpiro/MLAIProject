@@ -11,7 +11,7 @@ pacs_datasets = ["art_painting", "cartoon", "photo", "sketch"]
 
 available_datasets = pacs_datasets
 
-def get_train_dataloader(args, type_domain):
+def get_train_dataloader(args, type_domain, device):
 
     dataset_list = args.source
     assert isinstance(dataset_list, list)
@@ -24,7 +24,7 @@ def get_train_dataloader(args, type_domain):
     for dname in dataset_list:
         name_train, name_val, labels_train, labels_val = get_split_dataset_info(join(dirname(__file__), 'txt_lists', dname+'.txt'), args.val_size)
 
-        train_dataset = Dataset(name_train, labels_train, args.path_dataset, type_domain, target = args.target, jigsaw_style_transfer =args.jigsaw_style_transfer, img_transformer=img_transformer, beta_scrambled=args.beta_scrambled, beta_rotated=args.beta_rotated, beta_odd=args.beta_odd, rotation=False, odd=False)
+        train_dataset = Dataset(name_train, labels_train, args.path_dataset, type_domain, target = args.target, jigsaw_style_transfer=args.jigsaw_style_transfer, device=device, img_transformer=img_transformer, beta_scrambled=args.beta_scrambled, beta_rotated=args.beta_rotated, beta_odd=args.beta_odd, rotation=False, odd=False)
         datasets.append(train_dataset)
 
         val_dataset = TestDataset(name_val, labels_val, args.path_dataset, img_transformer=val_trasformer)
@@ -38,13 +38,13 @@ def get_train_dataloader(args, type_domain):
 
     return loader, val_loader
 
-def get_jigsaw_dataloader(args, type_domain):
+def get_jigsaw_dataloader(args, type_domain, device):
 
     #Only for DA
     names, labels = _dataset_info(join(dirname(__file__), 'txt_lists', args.target+'.txt'))
     img_tr = get_train_transformers(args)
 
-    train_dataset = Dataset(names, labels, args.path_dataset, type_domain, target = args.target, jigsaw_style_transfer =args.jigsaw_style_transfer, img_transformer=img_tr, beta_scrambled=args.beta_scrambled, beta_rotated=args.beta_rotated, beta_odd=args.beta_odd, rotation=False, odd=False)
+    train_dataset = Dataset(names, labels, args.path_dataset, type_domain, target = args.target, jigsaw_style_transfer=args.jigsaw_style_transfer, device=device, img_transformer=img_tr, beta_scrambled=args.beta_scrambled, beta_rotated=args.beta_rotated, beta_odd=args.beta_odd, rotation=False, odd=False)
     dataset = ConcatDataset([train_dataset])
     loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True, drop_last=False)
 
