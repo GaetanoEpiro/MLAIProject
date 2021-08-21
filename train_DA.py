@@ -60,6 +60,9 @@ def get_args():
     #Style Transfer 
     parser.add_argument("--jigsaw_style_transform", "-jt", type=bool, default=False, help="Enables style transfer for jigsaw")
 
+    parser.add_argument("--jigsaw_style_transfer", "-jt", type=bool, default=True, help="Enables style transfer for jigsaw")
+
+
 
     return parser.parse_args()
 
@@ -74,9 +77,9 @@ class Trainer:
         model = model_factory.get_network(args.network)(classes=args.n_classes, jigsaw_classes=31, rotation_classes=4, odd_classes=9)
         self.model = model.to(device)
 
-        self.source_loader, self.val_loader = data_helper.get_train_dataloader(args)
+        self.source_loader, self.val_loader = data_helper.get_train_dataloader(args, "DA", self.device)
         self.target_loader = data_helper.get_val_dataloader(args)
-        self.target_jigsaw = data_helper.get_jigsaw_dataloader(args)
+        self.target_jigsaw = data_helper.get_jigsaw_dataloader(args, "DA", self.device)
 
         self.test_loaders = {"val": self.val_loader, "test": self.target_loader}
         self.len_dataloader = len(self.source_loader)
