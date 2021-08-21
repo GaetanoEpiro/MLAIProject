@@ -194,8 +194,6 @@ class Dataset(data.Dataset):
       return res
 
 
-
-
     def change_style(self, img, index): 
 
       # it can be: photo, cartoon, sketch, art painting 
@@ -217,10 +215,31 @@ class Dataset(data.Dataset):
 
       else: 
         domains = [self.target]
+
+
+      # Do the jigsaw permutations of the current image img
+      imgwidth, imgheight = img.size
+    
+      x = math.ceil(imgwidth / 3)
+      y = math.ceil(imgheight / 3)
+
+      crops_img = []
       
+      for i in range(0, imgwidth, x):
+        for j in range(0, imgheight, y):
+          crop = img.crop((j, i, j+x, i+y))
+          crops_img.append(crop)
+
+      #Select a random permutation and reorder crops
+      label = np.random.randint(len(self.permutations)) + 1
+      permutation = self.permutations[label - 1]
+
+      permutate_img = [crops_img[i] for i in permutation]
+
+
+      #Find 9 new styles for each crop of our image img
       styles_chosen = []
 
-      # find 9 new styles for our img 
       while len(styles_chosen) != 9: 
         # randomly choose one domain
         img_domain = domains[np.random.randint(len(domains))]
@@ -238,39 +257,26 @@ class Dataset(data.Dataset):
         new_img_chosen = Image.open(new_path)
         styles_chosen.append(new_img_chosen)
     
+      #Change the style of each crop of our img with the styles found 
       normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
       trans = transforms.Compose([transforms.ToTensor(), normalize])
-        
-      imgwidth, imgheight = img.size
-     
-     # img_size = img.size[0]
-     # length = img_size / 3
-      x = math.ceil(imgwidth / 3)
-      y = math.ceil(imgheight / 3)
-
+      
       crops = []
 
-      #for ciao, style in enumerate(styles_chosen): 
-      s = 0
-      for i in range(0, imgwidth, x): 
-        for j in range(0, imgheight, y): 
-
-          img_t = trans(img.crop((j, i, j+x, i+y))).unsqueeze(0).to(self.device)
-          style_t = trans(styles_chosen[s]).unsqueeze(0).to(self.device)
-
-          with torch.no_grad():
+      for s in range(0, 9): 
+        img_t = trans(permutate_img[s]).unsqueeze(0).to(self.device)
+        style_t = trans(styles_chosen[s]).unsqueeze(0).to(self.device)
+        with torch.no_grad():
             out = self.style_model.generate(img_t, style_t, 1)
 
-          out = self.denorm(out)
-          out = torch.squeeze(out)
-          out = transforms.ToPILImage(mode="RGB")(out)
-          out = transforms.Resize([x, y])(out)
+        out = self.denorm(out)
+        out = torch.squeeze(out)
+        out = transforms.ToPILImage(mode="RGB")(out)
+        out = transforms.Resize([x, y])(out)
 
-          s += 1
-      
-          crops.append(out)
+        crops.append(out)
 
-      # transform out in an image in order to do the same crops we did in generate_jigsaw_puzzle
+      #Transform the crops found in a new image 
       new_image = Image.new('RGB', (imgwidth, imgheight))
 
       #Join crops
@@ -280,36 +286,10 @@ class Dataset(data.Dataset):
           new_image.paste(crops[k], (i*x, j*y))
           k += 1
   
+      return new_image, label
 
-      #new_image = transforms.ToPILImage(mode="RGB")(new_image)
-      #new_image = transforms.Resize([img_size, img_size])(new_image)
+      
 
-
-      # crop the image and then do the jigsaw puzzle 
-      # (same as we did in generate_jigsaw_puzzle)
-      label = np.random.randint(len(self.permutations)) + 1
-      permutation = self.permutations[label - 1]
-
-      crops = []
-  
-      for i in range(0, imgwidth, x):
-        for j in range(0, imgheight, y):
-          crop = new_image.crop((j, i, j+x, i+y))
-          crops.append(crop)
-
-      permutate_img = [crops[i] for i in permutation]
-
-      #Create the background for the new image
-      n_image = Image.new('RGB', (imgwidth, imgheight))
-
-      #Join crops
-      k = 0
-      for j in range(0, 3):
-        for i in range(0, 3):
-          n_image.paste(permutate_img[k], (i*x, j*y))
-          k += 1
-
-      return n_image, label
     
     def __getitem__(self, index):
         
