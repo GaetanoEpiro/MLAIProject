@@ -45,10 +45,10 @@ def get_args():
     parser.add_argument("--jigsaw_alpha", type=float, default=0.1, help="Jigen loss weight during training")
 
     parser.add_argument("--rotation", type=bool, default=False, help="")
-    parser.add_argument("--beta_rotated", type=float, default=0.1, help="Percentage of rotated images")
+    parser.add_argument("--weight_rotated", type=float, default=0.1, help="Percentage of rotated images")
     
     parser.add_argument("--odd_one_out", type=bool, default=False, help="")
-    parser.add_argument("--beta_odd", type=float, default=0.1, help="")
+    parser.add_argument("--weight_odd", type=float, default=0.1, help="")
 
     parser.add_argument("--jigsaw_style_transfer", "-jt", type=bool, default=True, help="Enables style transfer for jigsaw")
     
@@ -115,9 +115,10 @@ class Trainer:
 
                 _, odd_pred = odd_logit.max(dim=1)
 
+
             jig_loss = jigsaw_loss * self.args.jigsaw_alpha
-            rot_loss = rotation_loss * self.args.beta_rotated
-            odd_loss = odd_one_out_loss * self.args.beta_odd
+            rot_loss = rotation_loss * self.args.weight_rotated
+            odd_loss = odd_one_out_loss * self.args.weight_odd
             loss = class_loss + jig_loss + rot_loss + odd_loss + odd_loss
 
             loss.backward()
@@ -167,10 +168,9 @@ class Trainer:
                 if self.args.odd_one_out == True:
                     odd_acc = float(odd_correct) / total
  
-                accuracy = (class_acc + jigsaw_acc + rotation_acc + odd_acc) / self.nTasks
 
-                self.logger.log_test(phase, {"Classification Accuracy": accuracy})
-                self.results[phase][self.current_epoch] = accuracy
+                self.logger.log_test(phase, {"Classification Accuracy": class_acc, "Jigsaw Accuracy": jigsaw_acc})
+                self.results[phase][self.current_epoch] = class_acc
 
     def do_test(self, loader):
         class_correct = 0
