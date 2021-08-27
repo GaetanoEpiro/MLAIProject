@@ -42,7 +42,7 @@ def get_args():
     parser.add_argument("--folder_name", default=None, help="Used by the logger to save logs")
 
     #Jigsaw Puzzle
-    parser.add_argument("--beta_scrambled", type=float, default=0.01, help="Percentage of images used to solve the Jigsaw puzzle")
+    parser.add_argument("--beta_scrambled", type=float, default=0.4, help="Percentage of images used to solve the Jigsaw puzzle")
     parser.add_argument("--alpha_target", type=float, default=0.5, help="Target Jigen loss weight during training")
     parser.add_argument("--alpha_source", type=float, default=0.5, help="Source Jigen loss weight during training")
     parser.add_argument("--target_loss_wt", type=float, default=0.1, help="Target class loss weight during training")
@@ -202,10 +202,10 @@ class Trainer:
                 if self.args.odd_one_out == True:
                     odd_acc = float(odd_correct) / total
 
-                accuracy = (class_acc + jigsaw_acc + rotation_acc + odd_acc) / self.nTasks
+                #accuracy = (class_acc + jigsaw_acc + rotation_acc + odd_acc) / self.nTasks
 
-                self.logger.log_test(phase, {"Classification Accuracy": accuracy})
-                self.results[phase][self.current_epoch] = accuracy
+                self.logger.log_test(phase, {"Classification Accuracy": class_acc, "Jigsaw Accuracy": jigsaw_acc})
+                self.results[phase][self.current_epoch] = class_acc
 
     def do_test(self, loader):
         class_correct = 0
