@@ -87,7 +87,7 @@ def rotate_image(image):
 
   return image, label
 
-def generate_odd_one_out_image(image, names, path):
+def generate_odd_one_out_image(image, names, path, permutations):
 
   #Divide the image into crops
   image_crops = []
@@ -121,6 +121,12 @@ def generate_odd_one_out_image(image, names, path):
 
   #Replace the crop inside the original image
   image_crops[pos] = crops[pos]
+    
+  #Select a random permutation and reorder crops
+  label = np.random.randint(len(permutations)) + 1
+  permutation = permutations[label - 1]
+
+  permutate_img = [crops[i] for i in permutation]
 
   new_image = Image.new('RGB', (imgwidth, imgheight))
 
@@ -185,7 +191,7 @@ class Dataset(data.Dataset):
           return img, int(self.labels[index]), label, int(2)
 
         if task==3 and self.odd==True and self.n_odd < self.amount_odd:
-          img, label = generate_odd_one_out_image(img, self.names, self.data_path)
+          img, label = generate_odd_one_out_image(img, self.names, self.data_path, self.permutations)
           self.n_odd += 1
           img = self._image_transformer(img)
 
