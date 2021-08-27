@@ -137,7 +137,7 @@ def generate_odd_one_out_image(image, names, path, permutations):
   k = 0
   for j in range(0, 3):
     for i in range(0, 3):
-      new_image.paste(image_crops[k], (i*x, j*y))
+      new_image.paste(permutate_img[k], (i*x, j*y))
       k += 1
 
   return new_image, pos
