@@ -165,10 +165,9 @@ class Trainer:
                 if self.args.odd_one_out == True:
                     odd_acc = float(odd_correct) / total
  
-                accuracy = (class_acc + jigsaw_acc + rotation_acc + odd_acc) / self.nTasks
 
-                self.logger.log_test(phase, {"Classification Accuracy": accuracy})
-                self.results[phase][self.current_epoch] = accuracy
+                self.logger.log_test(phase, {"Classification Accuracy": class_acc, "Jigsaw Accuracy": jigsaw_acc})
+                self.results[phase][self.current_epoch] = class_acc
 
     def do_test(self, loader):
         class_correct = 0
