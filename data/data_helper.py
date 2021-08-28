@@ -46,7 +46,7 @@ def get_jigsaw_dataloader(args):
 
     train_dataset = Dataset(names, labels, args.path_dataset, img_transformer=img_tr, beta_scrambled=args.beta_scrambled, beta_rotated=args.beta_rotated, beta_odd=args.beta_odd, rotation=False, odd=False)
     dataset = ConcatDataset([train_dataset])
-    loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True, drop_last=False)
 
     return loader
 
